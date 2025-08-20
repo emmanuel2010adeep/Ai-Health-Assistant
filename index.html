@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Health Assistant</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #43cea2, #185a9d);
+      color: #fff;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+    }
+    #chat-box {
+      width: 70%;
+      max-width: 700px;
+      height: 400px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #ffffff22;
+      border-radius: 15px;
+      overflow-y: auto;
+      text-align: left;
+    }
+    .user { color: #00e6e6; margin: 10px 0; }
+    .bot { color: #ffcc00; margin: 10px 0; }
+    #user-input {
+      width: 60%;
+      padding: 12px;
+      font-size: 1em;
+      border-radius: 8px;
+      border: none;
+      margin-top: 15px;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 1em;
+      margin-left: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #ffcc00;
+      color: #000;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover { background: #ffdb4d; }
+  </style>
+</head>
+<body>
+  <h1>👩‍⚕️ AI Health Assistant</h1>
+  <div id="chat-box"></div>
+  <input type="text" id="user-input" placeholder="Describe your symptoms...">
+  <button onclick="sendMessage()">Send</button>
+  <button onclick="startVoice()">🎤 Speak</button>
+
+  <script>
+    // ---------------- Disease Knowledge Base ----------------
+    const DISEASES = [
+      { name: "Flu (Influenza)", keywords: ["fever","cough","headache","sore throat","runny nose","body ache","fatigue","chills"], advice: "Rest, warm fluids, paracetamol for fever as per label, consult a doctor if symptoms persist >48 hours or worsen." },
+      { name: "Common Cold", keywords: ["sneezing","runny nose","sore throat","congestion","mild fever","cough"], advice: "Rest, fluids, saline gargle/steam inhalation; consult a doctor if prolonged fever or breathing difficulty." },
+      { name: "Dengue", keywords: ["high fever","severe headache","joint pain","rash","eye pain","nausea","vomit","bleeding","platelet"], advice: "Hydrate well, avoid NSAIDs like ibuprofen/aspirin unless doctor advises, seek medical evaluation urgently." },
+      { name: "Malaria", keywords: ["high fever","chills","sweats","headache","nausea","vomit","fatigue"], advice: "Seek a diagnostic test promptly; anti-malarials are prescription-only. Hydrate and rest." },
+      { name: "Typhoid", keywords: ["prolonged fever","abdominal pain","diarrhea","constipation","headache","weakness"], advice: "Medical evaluation recommended; maintain hydration; complete any prescribed antibiotics exactly as advised." },
+      { name: "Migraine", keywords: ["headache","nausea","vomit","sensitivity to light","aura","throbbing"], advice: "Dark quiet room, rest; track triggers; seek medical care for personalized treatment." },
+      { name: "Asthma Exacerbation", keywords: ["wheezing","shortness of breath","chest tightness","cough","difficulty breathing"], advice: "Use prescribed inhaler; if no relief or severe symptoms, seek urgent medical care." },
+      { name: "Possible Heart Issue", keywords: ["chest pain","pressure chest","left arm pain","jaw pain","sweating","shortness of breath","nausea"], advice: "🚨 Emergency — seek immediate medical help." },
+      { name: "Tuberculosis", keywords: ["persistent cough","weight loss","night sweats","fever","blood cough","chest pain"], advice: "Medical testing required; TB is treatable with a full supervised course. Seek a clinic." },
+      { name: "COVID-19", keywords: ["fever","dry cough","tiredness","loss of taste","loss of smell","sore throat"], advice: "Isolate if advised locally, rest, hydrate, consider a test; monitor oxygen if unwell; consult a clinician." },
+      { name: "Food Poisoning", keywords: ["vomit","nausea","diarrhea","abdominal cramps","fever"], advice: "Oral rehydration, light diet; seek care for blood in stool, high fever, or dehydration." }
+    ];
+
+    // ---------------- Synonyms ----------------
+    const SYNONYMS = {
+      "tired": "fatigue", "tiredness": "fatigue", "breathless": "shortness of breath",
+      "stomach pain": "abdominal pain", "throwing up": "vomit", "nauseous": "nausea",
+      "pressure in chest": "pressure chest", "coughing blood": "blood cough"
+    };
+
+    // ---------------- Chat Logic ----------------
+    function sendMessage(){
+      let input = document.getElementById("user-input").value.trim();
+      if(!input) return;
+      addMessage("user", "🧑 You: " + input);
+
+      let normalized = input.toLowerCase();
+      for (let key in SYNONYMS){
+        if (normalized.includes(key)) {
+          normalized = normalized.replace(key, SYNONYMS[key]);
+        }
+      }
+
+      let found = null;
+      for (let d of DISEASES){
+        for (let k of d.keywords){
+          if (normalized.includes(k)) {
+            found = d;
+            break;
+          }
+        }
+        if(found) break;
+      }
+
+      let reply = found ? `👩‍⚕️ Doctor: Based on your symptoms, you might have *${found.name}*. Advice: ${found.advice}` 
+                        : "👩‍⚕️ Doctor: I am not sure, please consult a doctor for accurate diagnosis.";
+
+      addMessage("bot", reply);
+      speak(reply);
+      document.getElementById("user-input").value = "";
+    }
+
+    function addMessage(sender, text){
+      let chatBox = document.getElementById("chat-box");
+      let msg = document.createElement("div");
+      msg.className = sender;
+      msg.innerHTML = text;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // ---------------- Voice Output ----------------
+    function speak(text){
+      const utter = new SpeechSynthesisUtterance(text);
+      let voices = speechSynthesis.getVoices();
+      let femaleVoice = voices.find(v => v.name.toLowerCase().includes("female") || v.name.includes("Samantha"));
+      utter.voice = femaleVoice || voices.find(v => v.lang.includes("en")) || null;
+      utter.pitch = 1.1;
+      utter.rate = 0.95;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utter);
+    }
+    speechSynthesis.onvoiceschanged = () => {};
+
+    // ---------------- Voice Input ----------------
+    function startVoice(){
+      if (!('webkitSpeechRecognition' in window)) {
+        alert("Sorry, your browser does not support voice input.");
+        return;
+      }
+      let recog = new webkitSpeechRecognition();
+      recog.lang = "en-US";
+      recog.onresult = function(event){
+        let input = event.results[0][0].transcript;
+        document.getElementById("user-input").value = input;
+        sendMessage();
+      };
+      recog.start();
+    }
+  </script>
+</body>
+</html>
