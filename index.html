@@ -4,108 +4,153 @@
   <meta charset="UTF-8">
   <title>AI Health Assistant</title>
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
     body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(to right, #43cea2, #185a9d);
-      color: #fff;
+      background: #0f0f0f;
+      color: white;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* ---------------- Landing Page ---------------- */
+    #landing {
       text-align: center;
-      padding: 40px;
+      animation: fadeIn 1.5s ease-in-out;
     }
-    h1 {
-      font-size: 2.5em;
+    #landing h1 {
+      font-size: 3em;
       margin-bottom: 20px;
+      background: linear-gradient(to right, #00c6ff, #0072ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    #chat-box {
-      width: 70%;
-      max-width: 700px;
-      height: 400px;
-      margin: 20px auto;
-      padding: 20px;
-      background: #ffffff22;
-      border-radius: 15px;
-      overflow-y: auto;
-      text-align: left;
+    #landing p {
+      font-size: 1.3em;
+      margin-bottom: 30px;
+      color: #bbb;
     }
-    .user { color: #00e6e6; margin: 10px 0; }
-    .bot { color: #ffcc00; margin: 10px 0; }
-    #user-input {
-      width: 60%;
-      padding: 12px;
-      font-size: 1em;
-      border-radius: 8px;
+    #start-btn {
+      padding: 15px 40px;
+      font-size: 1.2em;
       border: none;
-      margin-top: 15px;
-    }
-    button {
-      padding: 12px 20px;
-      font-size: 1em;
-      margin-left: 10px;
-      border: none;
-      border-radius: 8px;
-      background: #ffcc00;
-      color: #000;
+      border-radius: 50px;
+      background: linear-gradient(45deg, #ff512f, #dd2476);
+      color: white;
       cursor: pointer;
       transition: 0.3s;
     }
-    button:hover { background: #ffdb4d; }
+    #start-btn:hover { transform: scale(1.05); }
+
+    /* ---------------- Chat Page ---------------- */
+    #chat-page { display: none; flex-direction: column; height: 100vh; width: 100%; }
+    header {
+      padding: 20px;
+      text-align: center;
+      font-size: 1.8em;
+      background: #1c1c1c;
+      color: #00c6ff;
+      font-weight: bold;
+      border-bottom: 2px solid #222;
+    }
+    #chat-box {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: url('https://www.transparenttextures.com/patterns/black-linen.png');
+    }
+    .msg {
+      margin: 12px 0;
+      padding: 12px 18px;
+      border-radius: 15px;
+      max-width: 70%;
+      animation: slideUp 0.4s ease-in-out;
+    }
+    .user { background: #0072ff; align-self: flex-end; }
+    .bot { background: #333; border: 1px solid #00c6ff; align-self: flex-start; }
+
+    #controls {
+      padding: 15px;
+      background: #1c1c1c;
+      display: flex;
+      justify-content: center;
+    }
+    #user-input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 25px;
+      border: none;
+      margin-right: 10px;
+      font-size: 1em;
+    }
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 25px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    #send-btn { background: #ff512f; color: white; margin-right: 10px; }
+    #voice-btn { background: #00c6ff; color: white; }
+
+    /* ---------------- Animations ---------------- */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   </style>
 </head>
 <body>
-  <h1>👩‍⚕️ AI Health Assistant</h1>
-  <div id="chat-box"></div>
-  <input type="text" id="user-input" placeholder="Describe your symptoms...">
-  <button onclick="sendMessage()">Send</button>
-  <button onclick="startVoice()">🎤 Speak</button>
+
+  <!-- Landing Page -->
+  <div id="landing">
+    <h1>👩‍⚕️ AI Health Assistant</h1>
+    <p>Your personal AI doctor – ask about symptoms, get instant advice, with voice support.</p>
+    <button id="start-btn" onclick="startChat()">Start Consultation</button>
+  </div>
+
+  <!-- Chat Page -->
+  <div id="chat-page">
+    <header>AI Health Assistant</header>
+    <div id="chat-box"></div>
+    <div id="controls">
+      <input type="text" id="user-input" placeholder="Describe your symptoms...">
+      <button id="send-btn" onclick="sendMessage()">Send</button>
+      <button id="voice-btn" onclick="startVoice()">🎤</button>
+    </div>
+  </div>
 
   <script>
+    // ---------------- Start Chat ----------------
+    function startChat(){
+      document.getElementById("landing").style.display = "none";
+      document.getElementById("chat-page").style.display = "flex";
+    }
+
     // ---------------- Disease Knowledge Base ----------------
     const DISEASES = [
-      { name: "Flu (Influenza)", keywords: ["fever","cough","headache","sore throat","runny nose","body ache","fatigue","chills"], advice: "Rest, warm fluids, paracetamol for fever as per label, consult a doctor if symptoms persist >48 hours or worsen." },
-      { name: "Common Cold", keywords: ["sneezing","runny nose","sore throat","congestion","mild fever","cough"], advice: "Rest, fluids, saline gargle/steam inhalation; consult a doctor if prolonged fever or breathing difficulty." },
-      { name: "Dengue", keywords: ["high fever","severe headache","joint pain","rash","eye pain","nausea","vomit","bleeding","platelet"], advice: "Hydrate well, avoid NSAIDs like ibuprofen/aspirin unless doctor advises, seek medical evaluation urgently." },
-      { name: "Malaria", keywords: ["high fever","chills","sweats","headache","nausea","vomit","fatigue"], advice: "Seek a diagnostic test promptly; anti-malarials are prescription-only. Hydrate and rest." },
-      { name: "Typhoid", keywords: ["prolonged fever","abdominal pain","diarrhea","constipation","headache","weakness"], advice: "Medical evaluation recommended; maintain hydration; complete any prescribed antibiotics exactly as advised." },
-      { name: "Migraine", keywords: ["headache","nausea","vomit","sensitivity to light","aura","throbbing"], advice: "Dark quiet room, rest; track triggers; seek medical care for personalized treatment." },
-      { name: "Asthma Exacerbation", keywords: ["wheezing","shortness of breath","chest tightness","cough","difficulty breathing"], advice: "Use prescribed inhaler; if no relief or severe symptoms, seek urgent medical care." },
-      { name: "Possible Heart Issue", keywords: ["chest pain","pressure chest","left arm pain","jaw pain","sweating","shortness of breath","nausea"], advice: "🚨 Emergency — seek immediate medical help." },
-      { name: "Tuberculosis", keywords: ["persistent cough","weight loss","night sweats","fever","blood cough","chest pain"], advice: "Medical testing required; TB is treatable with a full supervised course. Seek a clinic." },
-      { name: "COVID-19", keywords: ["fever","dry cough","tiredness","loss of taste","loss of smell","sore throat"], advice: "Isolate if advised locally, rest, hydrate, consider a test; monitor oxygen if unwell; consult a clinician." },
-      { name: "Food Poisoning", keywords: ["vomit","nausea","diarrhea","abdominal cramps","fever"], advice: "Oral rehydration, light diet; seek care for blood in stool, high fever, or dehydration." }
+      { name: "Flu (Influenza)", keywords: ["fever","cough","headache","sore throat","runny nose","body ache","fatigue","chills"], advice: "Rest, warm fluids, paracetamol for fever, consult a doctor if symptoms persist >48 hrs." },
+      { name: "Dengue", keywords: ["high fever","rash","eye pain","nausea","vomit","bleeding"], advice: "Drink fluids, avoid aspirin/ibuprofen, consult a doctor urgently." },
+      { name: "Asthma", keywords: ["wheezing","shortness of breath","chest tightness","cough"], advice: "Use prescribed inhaler, seek emergency care if no relief." },
+      { name: "Heart Issue", keywords: ["chest pain","left arm pain","jaw pain","sweating"], advice: "🚨 Emergency – seek immediate medical help." },
+      { name: "COVID-19", keywords: ["loss of smell","fever","dry cough","tiredness"], advice: "Rest, hydrate, test for COVID, isolate if advised." }
     ];
 
-    // ---------------- Synonyms ----------------
-    const SYNONYMS = {
-      "tired": "fatigue", "tiredness": "fatigue", "breathless": "shortness of breath",
-      "stomach pain": "abdominal pain", "throwing up": "vomit", "nauseous": "nausea",
-      "pressure in chest": "pressure chest", "coughing blood": "blood cough"
-    };
-
-    // ---------------- Chat Logic ----------------
     function sendMessage(){
       let input = document.getElementById("user-input").value.trim();
       if(!input) return;
-      addMessage("user", "🧑 You: " + input);
+      addMessage("user", input);
 
       let normalized = input.toLowerCase();
-      for (let key in SYNONYMS){
-        if (normalized.includes(key)) {
-          normalized = normalized.replace(key, SYNONYMS[key]);
-        }
-      }
-
       let found = null;
       for (let d of DISEASES){
         for (let k of d.keywords){
-          if (normalized.includes(k)) {
-            found = d;
-            break;
-          }
+          if (normalized.includes(k)) { found = d; break; }
         }
         if(found) break;
       }
 
-      let reply = found ? `👩‍⚕️ Doctor: Based on your symptoms, you might have *${found.name}*. Advice: ${found.advice}` 
-                        : "👩‍⚕️ Doctor: I am not sure, please consult a doctor for accurate diagnosis.";
+      let reply = found ? `👩‍⚕️ Based on your symptoms, you might have *${found.name}*. Advice: ${found.advice}`
+                        : "👩‍⚕️ I'm not sure. Please consult a doctor for accurate diagnosis.";
 
       addMessage("bot", reply);
       speak(reply);
@@ -115,7 +160,7 @@
     function addMessage(sender, text){
       let chatBox = document.getElementById("chat-box");
       let msg = document.createElement("div");
-      msg.className = sender;
+      msg.className = "msg " + sender;
       msg.innerHTML = text;
       chatBox.appendChild(msg);
       chatBox.scrollTop = chatBox.scrollHeight;
@@ -124,10 +169,7 @@
     // ---------------- Voice Output ----------------
     function speak(text){
       const utter = new SpeechSynthesisUtterance(text);
-      let voices = speechSynthesis.getVoices();
-      let femaleVoice = voices.find(v => v.name.toLowerCase().includes("female") || v.name.includes("Samantha"));
-      utter.voice = femaleVoice || voices.find(v => v.lang.includes("en")) || null;
-      utter.pitch = 1.1;
+      utter.voice = speechSynthesis.getVoices().find(v => v.lang === "en-US") || null;
       utter.rate = 0.95;
       speechSynthesis.cancel();
       speechSynthesis.speak(utter);
@@ -137,7 +179,7 @@
     // ---------------- Voice Input ----------------
     function startVoice(){
       if (!('webkitSpeechRecognition' in window)) {
-        alert("Sorry, your browser does not support voice input.");
+        alert("Your browser does not support voice input.");
         return;
       }
       let recog = new webkitSpeechRecognition();
